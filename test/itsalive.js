@@ -1,10 +1,14 @@
 /* eslint-disable */
 const chai = require('chai');
 const expect = chai.expect;
+const should = chai.should();
 const spies = require('chai-spies');
+const things = require('chai-things');
 chai.use(spies);
+chai.use(things);
 const model = require('../models');
 const Page = model.Page;
+const User = model.User;
 
 describe('first test', function() {
   it('basic arithmetic', function() {
@@ -30,6 +34,16 @@ describe('first test', function() {
 });
 
 describe('Page model', function() {
+  beforeEach(function(done) {
+    User.sync({ force: true })
+    .then(function() {
+      return Page.sync({ force: true })
+        .then(function() {
+          done();
+        })
+    })
+    .catch(done);
+  });
   describe('Virtuals', function () {
     var page;
     beforeEach(function(done) {
@@ -51,39 +65,93 @@ describe('Page model', function() {
   })
 
   describe('Class methods', function () {
-    var page;
-    beforeEach(function(done) {
-      page = Page.create({
-        title: 'Testing the class method',
-        content: 'Wooh this is still annoying',
-        tags: ['annoying', 'thisisstillannoying']
-      })
-      .then(function() {
-        done();
-      })
-      .catch(done);
-    })
-
     describe('findByTag', function () {
+      beforeEach(function() {
+        return Page.create({
+          title: 'Testing the class method',
+          content: 'Wooh this is still annoying',
+          tags: ['annoying', 'thisisstillannoying']
+        })
+      })
       it('gets pages with the search tag', function() {
-
+        return Page.findByTag('annoying')
+        .then(function(pages) {
+          expect(pages).to.have.lengthOf(1);
+        })
       });
-      it('does not get pages without the search tag',function() {});
+      it('does not get pages without the search tag', function() {
+        return Page.findByTag('annoy')
+        .then(function(pages) {
+          expect(pages).to.have.lengthOf(0);
+        })
+      });
     });
   });
 
   describe('Instance methods', function () {
     describe('findSimilar', function () {
-      it('never gets itself');
-      it('gets other pages with any common tags');
-      it('does not get other pages without any common tags');
+      beforeEach(function() {
+          let data1 = {
+            title: 'base page',
+            content: 'base page content',
+            tags: ['base', 'page']
+          }
+          let data2 = {
+            title: 'similar page',
+            content: 'similar page content',
+            tags: ['similar', 'page']
+          }
+          let data3 = {
+            title: 'unique page',
+            content: 'unique page content',
+            tags: ['unique']
+          }
+         return Promise.all([
+           Page.create(data1),
+           Page.create(data2),
+           Page.create(data3)
+         ])
+        .then(function(pages) {
+          return pages;
+        });
+      });
+      it('never gets itself', function() {
+        pages.then(function() {
+          pages.each(function(page) {
+            console.log(page);
+          });
+        });
+      });
+      it('gets other pages with any common tags', function() {
+
+      });
+      it('does not get other pages without any common tags', function() {
+
+      });
     });
   });
 
   describe('Validations', function () {
-    it('errors without title');
-    it('errors without content');
-    it('errors given an invalid status');
+    it('errors without title', function() {
+      Page.create({
+        content: 'this is without title'
+      })
+      .then(function(page) {
+        Page.validate()
+      })
+    });
+    it('errors without content', function() {
+      Page.create({
+        title: 'this is without content'
+      })
+    });
+    it('errors given an invalid status', function() {
+      Page.create({
+        title: 'invalid status',
+        content: 'this is with an invalid status',
+        status: 'NO'
+      })
+    });
   });
 
   describe('Hooks', function () {
